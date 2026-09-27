@@ -24,6 +24,10 @@ namespace iRacingReplayDirector
 
 		public bool CanExecute(object parameter)
 		{
+			// A running capture must always be stoppable, even after the last
+			// camera node or while the replay is paused.
+			if (ReplayDirectorVM.IsCaptureActive() || ReplayDirectorVM.RecordBtnText == "Stop Rec")
+				return true;
 			ReplayDirectorVM.CaptureErrorMessage = ReplayDirectorVM.SelectedCaptureMode.CaptureAvailabilityMessage;
 
 			// Disabled if in-sim recording is disabled
@@ -59,9 +63,17 @@ namespace iRacingReplayDirector
 
 		public void Execute(object parameter)
 		{
-			if (ReplayDirectorVM.IsCaptureActive())
+			if (ReplayDirectorVM.IsCaptureActive() || ReplayDirectorVM.RecordBtnText == "Stop Rec")
 			{
 				ReplayDirectorVM.StopRecording();
+			}
+			else if (ReplayDirectorVM.IsBoundedRecordingPending)
+			{
+				ReplayDirectorVM.StopRecording();
+			}
+			else if (ReplayDirectorVM.StartPreparedRaceRecording())
+			{
+				return;
 			}
 			else
 			{
