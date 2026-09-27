@@ -1219,9 +1219,21 @@ namespace iRacingReplayDirector.AI.Director
 		/// </summary>
 		private Driver FindMostExcitingDriver(int frame)
 		{
+			// Planning happens after the scan has restored the original replay
+			// position. Use the scanned race frame, not live track surfaces from
+			// practice, to decide which drivers can be filmed at this cut.
+			var raceSnapshot = LastScanResult?.Snapshots?
+				.OrderBy(s => Math.Abs((long)s.Frame - frame)).FirstOrDefault();
+			var visibleNumbers = new HashSet<int>(raceSnapshot?.DriverStates?
+				.Where(d => d != null && d.NumberRaw != 0 && d.TrackSurface != TrackSurfaces.NotInWorld)
+				.Select(d => d.NumberRaw) ?? Enumerable.Empty<int>());
 			var activeDrivers = _viewModel.Drivers
-				.Where(d => d != null && d.TrackSurface != TrackSurfaces.NotInWorld && d.NumberRaw != 0)
+				.Where(d => d != null && d.NumberRaw != 0 &&
+					(visibleNumbers.Count > 0 ? visibleNumbers.Contains(d.NumberRaw) :
+						d.TrackSurface != TrackSurfaces.NotInWorld))
 				.ToList();
+			if (!activeDrivers.Any())
+				activeDrivers = _viewModel.Drivers.Where(d => d != null && d.NumberRaw != 0).ToList();
 
 			if (!activeDrivers.Any())
 				return _viewModel.Drivers.FirstOrDefault();
