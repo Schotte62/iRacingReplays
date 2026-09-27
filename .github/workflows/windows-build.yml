@@ -25,7 +25,7 @@ jobs:
       - name: Restore NuGet packages
         run: nuget restore ReplayTimeline.sln
       - name: Build Release
-        run: msbuild ReplayTimeline.sln /p:Configuration=Release /p:Platform=AnyCPU /m
+        run: msbuild ReplayTimeline.sln /p:Configuration=Release '/p:Platform=Any CPU' /m
       - name: Package test application
         shell: pwsh
         run: |
