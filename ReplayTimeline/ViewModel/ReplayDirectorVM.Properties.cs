@@ -290,6 +290,9 @@ namespace iRacingReplayDirector
 			get { return _selectedCaptureMode; }
 			set
 			{
+				if (_selectedCaptureMode != null && value != _selectedCaptureMode &&
+					(IsCaptureActive() || IsBoundedRecordingPending))
+					return;
 				_selectedCaptureMode = value;
 				Properties.Settings.Default.CaptureModeSelected = _selectedCaptureMode.Name;
 				OnPropertyChanged("SelectedCaptureMode");
