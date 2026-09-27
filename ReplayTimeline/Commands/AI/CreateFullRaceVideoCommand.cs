@@ -37,12 +37,15 @@ namespace iRacingReplayDirector
 			CommandManager.InvalidateRequerySuggested();
 			try
 			{
+				App.LogDiagnostic("Create Full Race Video requested at replay frame " + _vm.CurrentFrame);
 				var scan = await PrepareRaceCameraPlanAsync();
+				App.LogDiagnostic($"Race scan complete: frames {scan.StartFrame} to {scan.EndFrame}; {scan.Events.Count} events");
 				_vm.StartBoundedRecording(scan.StartFrame, scan.EndFrame);
 				_vm.StatusBarText = "Race recording started at the race session; capture stops at its end.";
 			}
 			catch (Exception ex)
 			{
+				App.LogDiagnostic("Create Full Race Video failed", ex);
 				_vm.StatusBarText = "Full replay recording failed: " + ex.Message;
 				MessageBox.Show(ex.Message, "Create Full Race Video", MessageBoxButton.OK, MessageBoxImage.Error);
 			}
