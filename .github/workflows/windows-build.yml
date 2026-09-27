@@ -1,0 +1,42 @@
+name: Windows test build
+
+on:
+  push:
+    branches: [automated-video]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: microsoft/setup-msbuild@v2
+      - uses: NuGet/setup-nuget@v2
+      - name: Download upstream runtime dependencies
+        shell: pwsh
+        run: |
+          $url = 'https://github.com/pwillia7/iRacingReplays/releases/download/v1.0/iRacingAutomatedReplayDirector.zip'
+          Invoke-WebRequest -Uri $url -OutFile upstream.zip
+          $actual = (Get-FileHash upstream.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          $expected = 'b3e51e2ebebfeea9681c131e9643e78c761bc902f5d8d7f49d91a839934bb4bd'
+          if ($actual -ne $expected) { throw "Upstream archive checksum mismatch: $actual" }
+          New-Item -ItemType Directory -Force ReplayTimeline/Dependencies | Out-Null
+          Expand-Archive upstream.zip -DestinationPath ReplayTimeline/Dependencies
+      - name: Restore NuGet packages
+        run: nuget restore ReplayTimeline.sln
+      - name: Build Release
+        run: msbuild ReplayTimeline.sln /p:Configuration=Release /p:Platform=AnyCPU /m
+      - name: Package test application
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force test-build | Out-Null
+          Copy-Item ReplayTimeline/bin/Release/*.exe test-build/
+          Copy-Item ReplayTimeline/bin/Release/*.dll test-build/
+          Copy-Item ReplayTimeline/bin/Release/*.config test-build/
+          Copy-Item LICENSE test-build/
+          Copy-Item docs/windows-test.md test-build/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: automated-video-windows-test
+          path: test-build/
+          if-no-files-found: error
