@@ -24,6 +24,11 @@ jobs:
           Expand-Archive upstream.zip -DestinationPath ReplayTimeline/Dependencies
       - name: Restore NuGet packages
         run: nuget restore ReplayTimeline.sln
+      - name: Patch missing track usage in upstream simulator dependency
+        shell: pwsh
+        run: |
+          nuget install Mono.Cecil -Version 0.11.6 -OutputDirectory packages -NonInteractive
+          ./tools/Patch-SimulatorDependency.ps1 -DllPath ReplayTimeline/Dependencies/iRacingSimulator.dll
       - name: Build Release
         run: msbuild ReplayTimeline.sln /p:Configuration=Release '/p:Platform=Any CPU' /m
       - name: Package test application
