@@ -9,7 +9,8 @@ recorder manually. Keep the existing camera director and make the LLM optional.
 ## Verified starting point
 
 - `Commands/AI/ScanReplayCommand.cs` scans from the current frame to the final
-  frame. A full-race workflow must explicitly seek to the race start first.
+  frame. The automatic full-race command scans the loaded replay to identify
+  the Race session and refines its first frame before capture.
 - `AIDirector.ApplyPlanToNodeCollection()` adds camera changes to the timeline.
 - `ReplayDirectorVM.StartRecording()` starts the selected capture mode and sets
   replay speed to 1. `StopRecording()` pauses playback and stops capture.
@@ -43,12 +44,13 @@ reaches its start, and stop at its end. The normal "final node" stop is bypassed
 for that range. At each range start it selects the camera that was active at
 that replay frame. `BoundedCaptureFinished` fires only when the planned end is
 reached; manual stop does not report a successful clip. The **Auto Director → Create Full Race Video** menu command now
-scans the loaded replay from frame 0, generates and applies camera changes, and
-starts bounded capture using the selected capture mode. It requires a paused
+scans the loaded replay, finds the Race session rather than starting at frame 0,
+generates and applies camera changes within that session, and starts bounded
+capture using the selected capture mode. It requires a paused
 race replay and an available recorder. In-Sim Capture and OBS still store files
 in their own configured output folders. The command does not verify the video
-file or identify the exact race start when the replay includes pre-race footage;
-these behaviors need a real Windows/iRacing test before release.
+file. The Race session boundary, including formation laps and standing starts,
+must be checked against an actual replay on Windows before release.
 
 Highlights and Both are still under development: the next step is a job
 controller that records each interval and joins its output files.
