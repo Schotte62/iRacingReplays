@@ -37,9 +37,12 @@ recorder manually. Keep the existing camera director and make the LLM optional.
 `AI/Director/HighlightPlanner.cs` produces ordered, non-overlapping replay
 intervals from a scan. It reserves an opening and finish, then adds detected
 events by importance with configurable lead and tail. Its output is capped by
-the requested duration. This is a planning component only: no video output is
-produced yet. The next step is to connect it to a capture job that records
-individual intervals and joins their files.
+the requested duration. `ReplayDirectorVM.StartBoundedRecording(startFrame,
+endFrame)` can seek to a range, start the selected recorder once the replay
+reaches its start, and stop at its end. The normal "final node" stop is bypassed
+for that range. These components are not yet connected to a Create Video button;
+no finished video is produced by this branch yet. The next step is a job
+controller that records each interval and joins its files.
 
 ## Verification needed on the user's PC
 
