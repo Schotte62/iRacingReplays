@@ -16,6 +16,8 @@ namespace iRacingReplayDirector
 	public partial class App : Application
 	{
 		private static readonly object DiagnosticLock = new object();
+		private readonly System.Collections.Generic.HashSet<string> _reportedUiErrors =
+			new System.Collections.Generic.HashSet<string>();
 		public static string DiagnosticPath => Path.Combine(
 			Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
 			"iRacingSequenceDirector", "diagnostics.log");
@@ -34,10 +36,12 @@ namespace iRacingReplayDirector
 
 		private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs args)
 		{
+			args.Handled = true;
+			string signature = args.Exception.GetType().FullName + args.Exception.StackTrace;
+			if (!_reportedUiErrors.Add(signature)) return;
 			LogDiagnostic("UI exception", args.Exception);
 			MessageBox.Show("The application encountered an error. Details were saved to:\n" +
 				DiagnosticPath, "Sequence Director Error", MessageBoxButton.OK, MessageBoxImage.Error);
-			args.Handled = true;
 		}
 
 		public static void LogDiagnostic(string message, Exception error = null)
