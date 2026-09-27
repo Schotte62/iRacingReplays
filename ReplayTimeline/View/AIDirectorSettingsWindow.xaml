@@ -18,6 +18,15 @@
 
         <!-- Settings Content -->
         <TabControl Grid.Row="1">
+            <TabItem Header="Video">
+                <StackPanel Margin="10">
+                    <TextBlock Text="Highlights" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                    <TextBlock Text="Gewünschte Highlight-Länge (Minuten):" Margin="0,0,0,4"/>
+                    <TextBox x:Name="HighlightTargetMinutesBox" Width="70" HorizontalAlignment="Left" MaxLength="3"/>
+                    <TextBlock Text="1 bis 720 Minuten. Bei wenigen erkannten Ereignissen kann das Video kürzer werden."
+                               Foreground="Gray" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                </StackPanel>
+            </TabItem>
             <!-- LLM Provider Tab -->
             <TabItem Header="Camera Plan">
                 <StackPanel Margin="10">
