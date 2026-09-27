@@ -52,6 +52,17 @@ in their own configured output folders. The command does not verify the video
 file. The Race session boundary, including formation laps and standing starts,
 must be checked against an actual replay on Windows before release.
 
+### Start of the race
+
+The original `MerlinCooper/iRacingReplayDirector` filters its telemetry feed
+with `RaceOnly()`, then takes the first sample where `SessionState == Racing`
+and backs up 20 seconds (`Phases/AnalyseRace.cs`). The new workflow uses the
+telemetry `SessionNum` and its `SessionType` in iRacing session info to find
+the first Race frame directly. This excludes Practice and Qualifying while
+keeping the entire Race session, including any formation lap before the green
+flag. The session transition and visible first frame need confirmation in an
+actual replay; the two programs do not currently use identical start rules.
+
 Highlights and Both are still under development: the next step is a job
 controller that records each interval and joins its output files.
 
