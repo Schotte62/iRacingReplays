@@ -18,6 +18,7 @@ namespace iRacingReplayDirector
 
 		private void LoadSettings()
 		{
+			HighlightTargetMinutesBox.Text = _aiDirector.Settings.HighlightTargetMinutes.ToString();
 			// Load provider selection
 			if (_aiDirector.Settings.SelectedProvider == "Local")
 			{
@@ -340,7 +341,17 @@ namespace iRacingReplayDirector
 
 		private void Save_Click(object sender, RoutedEventArgs e)
 		{
+			if (!int.TryParse(HighlightTargetMinutesBox.Text, out int minutes) || minutes < 1 || minutes > 720)
+			{
+				MessageBox.Show("Bitte eine Highlight-Länge von 1 bis 720 Minuten eingeben.",
+					"Auto Director Settings", MessageBoxButton.OK, MessageBoxImage.Warning);
+				HighlightTargetMinutesBox.Focus();
+				return;
+			}
 			SaveSettings();
+			_aiDirector.Settings.HighlightTargetMinutes = minutes;
+			Properties.Settings.Default.HighlightTargetMinutes = minutes;
+			Properties.Settings.Default.Save();
 			DialogResult = true;
 			Close();
 		}
