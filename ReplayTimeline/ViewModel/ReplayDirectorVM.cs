@@ -17,6 +17,24 @@ namespace iRacingReplayDirector
 	{
 		private int? _boundedCaptureEndFrame;
 		private int? _boundedCaptureStartFrame;
+		private int? _preparedRaceStartFrame;
+		private int? _preparedRaceEndFrame;
+		public void PrepareRaceRecording(int startFrame, int endFrame)
+		{
+			_preparedRaceStartFrame = startFrame;
+			_preparedRaceEndFrame = endFrame;
+		}
+		public bool StartPreparedRaceRecording()
+		{
+			if (!_preparedRaceStartFrame.HasValue || !_preparedRaceEndFrame.HasValue) return false;
+			int start = _preparedRaceStartFrame.Value;
+			int end = _preparedRaceEndFrame.Value;
+			StartBoundedRecording(start, end);
+			_preparedRaceStartFrame = null;
+			_preparedRaceEndFrame = null;
+			StatusBarText = "Seeking race start; capture begins when the replay is ready.";
+			return true;
+		}
 		private List<HighlightInterval> _highlightRanges;
 		private int _highlightIndex;
 		public bool VideoPreparationBusy { get; set; }
@@ -465,7 +483,7 @@ namespace iRacingReplayDirector
 
 				UpdateUILabels();
 
-				if (IsCaptureActive())
+				if (IsCaptureActive() && !_boundedCaptureEndFrame.HasValue)
 				{
 					// Stop recording if playback is stopped (usually at end of replay...)
 					StopRecording();
