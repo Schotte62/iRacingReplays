@@ -376,6 +376,9 @@ namespace iRacingReplayDirector.AI.Director
 				{
 					Frame = frame,
 					SessionTime = _viewModel.SessionTime,
+					SessionNum = Sim.Instance.Telemetry.SessionNum.Value,
+					SessionType = Sim.Instance.SessionInfo["SessionInfo"]["Sessions"]
+						["SessionNum", Sim.Instance.Telemetry.SessionNum.Value]["SessionType"].GetValue(""),
 					DriverStates = new List<DriverSnapshot>()
 				};
 
