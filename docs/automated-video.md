@@ -64,7 +64,14 @@ flag. The session transition and visible first frame need confirmation in an
 actual replay; the two programs do not currently use identical start rules.
 
 Highlights and Both are still under development: the next step is a job
-controller that records each interval and joins its output files.
+controller that plays each interval, pauses OBS during seeks, and resumes into
+the same output file. `CaptureMode_OBS` now exposes guarded PauseRecording and
+ResumeRecording operations using Ctrl+Shift+P. Before this can work, **both**
+Pause Recording and Unpause Recording must be assigned Ctrl+Shift+P in OBS.
+The existing Start/Stop Recording hotkeys remain Ctrl+Shift+R. These new
+operations are not yet called by a menu command. OBS reports no recording
+state back to this application, so a real test must also check that OBS was
+idle before starting and that pause/unpause actually happened.
 
 ## Verification needed on the user's PC
 
