@@ -40,9 +40,16 @@ events by importance with configurable lead and tail. Its output is capped by
 the requested duration. `ReplayDirectorVM.StartBoundedRecording(startFrame,
 endFrame)` can seek to a range, start the selected recorder once the replay
 reaches its start, and stop at its end. The normal "final node" stop is bypassed
-for that range. These components are not yet connected to a Create Video button;
-no finished video is produced by this branch yet. The next step is a job
-controller that records each interval and joins its files.
+for that range. The **Auto Director → Create Full Race Video** menu command now
+scans the loaded replay from frame 0, generates and applies camera changes, and
+starts bounded capture using the selected capture mode. It requires a paused
+race replay and an available recorder. In-Sim Capture and OBS still store files
+in their own configured output folders. The command does not verify the video
+file or identify the exact race start when the replay includes pre-race footage;
+these behaviors need a real Windows/iRacing test before release.
+
+Highlights and Both are still under development: the next step is a job
+controller that records each interval and joins its output files.
 
 ## Verification needed on the user's PC
 
