@@ -65,33 +65,57 @@ namespace iRacingReplayDirector
 			try
 			{
 				int endFrame = _vm.FinalFrame;
-				_vm.StatusBarText = "Scanning full replay for camera changes...";
-				var scan = await _vm.AIDirector.ScanReplayAsync(0, endFrame);
+				_vm.StatusBarText = "Finding race with iRacing session skip...";
+				Sim.Instance.Sdk.Replay.Jump(iRSDKSharp.ReplaySearchModeTypes.ToStart);
+				await Task.Delay(500);
+				int raceStart = -1;
+				int raceSession = -1;
+				for (int session = 0; session < 32; session++)
+				{
+					int current = _vm.CurrentFrame;
+					int sessionNum = Sim.Instance.Telemetry.SessionNum.Value;
+					string type = Sim.Instance.SessionInfo["SessionInfo"]["Sessions"]
+						["SessionNum", sessionNum]["SessionType"].GetValue("");
+					if (IsRace(type)) { raceStart = current; raceSession = sessionNum; break; }
+					Sim.Instance.Sdk.Replay.Jump(iRSDKSharp.ReplaySearchModeTypes.NextSession);
+					bool moved = false;
+					for (int attempt = 0; attempt < 30; attempt++)
+					{
+						await Task.Delay(100);
+						if (_vm.CurrentFrame > current + 2) { moved = true; break; }
+					}
+					if (!moved) break;
+				}
+				if (raceStart < 0)
+					throw new InvalidOperationException("iRacing session skip did not find a race. No recording was started.");
+				App.LogDiagnostic($"iRacing race session {raceSession} begins at frame {raceStart}; replay ends at {endFrame}.");
+				// The replay may contain post-race sessions; find their boundary
+				// using the same session skip command as the existing UI.
+				Sim.Instance.Sdk.Replay.Jump(iRSDKSharp.ReplaySearchModeTypes.NextSession);
+				int raceEnd = endFrame;
+				for (int attempt = 0; attempt < 30; attempt++)
+				{
+					await Task.Delay(100);
+					if (_vm.CurrentFrame > raceStart + 2 && Sim.Instance.Telemetry.SessionNum.Value != raceSession)
+					{
+						raceEnd = _vm.CurrentFrame;
+						break;
+					}
+				}
+				if (raceEnd <= raceStart)
+					throw new InvalidOperationException("Invalid race session boundaries. No recording was started.");
+				_vm.StatusBarText = "Scanning race session for camera changes...";
+				var scan = await _vm.AIDirector.ScanReplayAsync(raceStart, raceEnd);
 				if (scan == null || scan.Snapshots.Count == 0)
 					throw new InvalidOperationException("Replay scan did not return telemetry. No recording was started.");
 				App.LogDiagnostic($"Race scan samples: total {scan.Snapshots.Count}, replay end {endFrame}, sessions " +
 					string.Join("; ", scan.Snapshots.GroupBy(s => new { s.SessionNum, s.SessionType })
 						.Select(g => $"{g.Key.SessionNum}/{g.Key.SessionType}: {g.Count()} frames {g.Min(s => s.Frame)}-{g.Max(s => s.Frame)}")));
-				var raceSnapshots = scan.Snapshots.Where(s => IsRace(s.SessionType)).OrderBy(s => s.Frame).ToList();
-				if (raceSnapshots.Count == 0)
-					throw new InvalidOperationException("No race session was found in this replay. No recording was started.");
-				int firstRaceSample = raceSnapshots[0].Frame;
-				int previousSample = scan.Snapshots.Where(s => s.Frame < firstRaceSample)
-					.Select(s => s.Frame).DefaultIfEmpty(0).Max();
-				int raceStart = await FindRaceStartAsync(previousSample, firstRaceSample);
-				int raceSession = raceSnapshots[0].SessionNum;
-				int firstLaterSession = scan.Snapshots
-					.Where(s => s.Frame > firstRaceSample && s.SessionNum != raceSession)
-					.Select(s => s.Frame).DefaultIfEmpty(endFrame).Min();
-				int raceEnd = firstLaterSession == endFrame ? endFrame :
-					await FindRaceEndAsync(raceSnapshots.Where(s => s.Frame < firstLaterSession).Max(s => s.Frame), firstLaterSession);
-				if (raceEnd <= raceStart)
-					throw new InvalidOperationException("Could not determine the race frame range. No recording was started.");
 				scan.StartFrame = raceStart;
 				scan.EndFrame = raceEnd;
 				scan.SessionType = "Race";
 				scan.DurationSeconds = (raceEnd - raceStart) / 60.0;
-				scan.Snapshots = raceSnapshots.Where(s => s.SessionNum == raceSession && s.Frame < raceEnd).ToList();
+				scan.Snapshots = scan.Snapshots.Where(s => s.SessionNum == raceSession && s.Frame < raceEnd).ToList();
 				scan.Events = scan.Events.Where(e => e.Frame >= raceStart && e.Frame < raceEnd).ToList();
 				if (!_vm.IsSessionReady() || _vm.FinalFrame < endFrame)
 					throw new InvalidOperationException("Replay changed during scan. No recording was started.");
