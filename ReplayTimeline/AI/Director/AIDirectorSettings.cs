@@ -162,6 +162,12 @@ namespace iRacingReplayDirector.AI.Director
 		// ===========================================
 		// Camera Plan Generation Settings
 		// ===========================================
+		private int _highlightTargetMinutes = 8;
+		public int HighlightTargetMinutes
+		{
+			get { return _highlightTargetMinutes; }
+			set { _highlightTargetMinutes = value; OnPropertyChanged("HighlightTargetMinutes"); }
+		}
 
 		// Whether to use AI/LLM for camera plan generation (false = event-driven local generation)
 		private bool _useAIForCameraPlan = false;
