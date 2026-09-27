@@ -63,11 +63,15 @@ keeping the entire Race session, including any formation lap before the green
 flag. The session transition and visible first frame need confirmation in an
 actual replay; the two programs do not currently use identical start rules.
 
-Highlights and Both are still under development. `ReplayDirectorVM.StartHighlightsRecording()` now
+Highlights and Both are still under development. The **Auto Director → Create
+Highlights Video (8 min, OBS)** command now uses the same Race session scan and
+camera plan as Full Race, builds intervals capped at eight minutes, and starts
+`ReplayDirectorVM.StartHighlightsRecording()`. This currently requires OBS Studio.
+The target duration is an upper bound: if the planner finds fewer interesting
+events, the video can be shorter. `ReplayDirectorVM.StartHighlightsRecording()`
 sequences ordered highlight ranges: it pauses OBS before each seek, restores
 the active camera, resumes the replay and OBS, and stops at the final range.
-This method is not connected to a menu command yet and needs a Windows/OBS
-capture test. `CaptureMode_OBS` exposes guarded PauseRecording and
+This needs a Windows/OBS capture test. `CaptureMode_OBS` exposes guarded PauseRecording and
 ResumeRecording operations using Ctrl+Shift+P. Before this can work, **both**
 Pause Recording and Unpause Recording must be assigned Ctrl+Shift+P in OBS.
 The existing Start/Stop Recording hotkeys remain Ctrl+Shift+R. OBS reports no recording
