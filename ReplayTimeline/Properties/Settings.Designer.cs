@@ -154,6 +154,14 @@ namespace iRacingReplayDirector.Properties {
                 this["CaptureModeSelected"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("8")]
+        public int HighlightTargetMinutes {
+            get { return ((int)(this["HighlightTargetMinutes"])); }
+            set { this["HighlightTargetMinutes"] = value; }
+        }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
