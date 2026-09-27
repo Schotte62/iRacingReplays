@@ -239,15 +239,21 @@ namespace iRacingReplayDirector.AI.Director
 						continue;
 					}
 
-					// Wait for telemetry to update
-					try
+					// SessionNum must belong to the requested replay frame. A fixed
+					// delay can capture telemetry from the previous seek and assign
+					// it the new frame, inventing false session boundaries.
+					bool seekSettled = false;
+					for (int attempt = 0; attempt < 15; attempt++)
 					{
-						await Task.Delay(100).ConfigureAwait(false);
+						await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+						if (Math.Abs((long)_viewModel.CurrentFrame - frame) <= frameStep / 2)
+						{
+							seekSettled = true;
+							break;
+						}
 					}
-					catch (TaskCanceledException)
-					{
-						break;
-					}
+					if (!seekSettled)
+						throw new InvalidOperationException($"Replay seek did not settle at frame {frame}; actual frame {_viewModel.CurrentFrame}.");
 
 					// Capture snapshot on UI thread
 					TelemetrySnapshot snapshot = null;
@@ -255,7 +261,7 @@ namespace iRacingReplayDirector.AI.Director
 					{
 						await Application.Current.Dispatcher.InvokeAsync(() =>
 						{
-							snapshot = CaptureSnapshot(frame);
+							snapshot = CaptureSnapshot(_viewModel.CurrentFrame);
 						});
 					}
 					catch (Exception)
