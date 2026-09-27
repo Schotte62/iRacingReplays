@@ -17,8 +17,30 @@ namespace iRacingReplayDirector
 	{
 		private int? _boundedCaptureEndFrame;
 		private int? _boundedCaptureStartFrame;
+		private List<HighlightInterval> _highlightRanges;
+		private int _highlightIndex;
 		public bool IsBoundedRecordingPending => _boundedCaptureStartFrame.HasValue;
 		public event EventHandler BoundedCaptureFinished;
+
+		/// <summary>Record ordered highlight ranges into one OBS recording.</summary>
+		public void StartHighlightsRecording(IEnumerable<HighlightInterval> ranges)
+		{
+			if (!(SelectedCaptureMode is CaptureMode_OBS))
+				throw new InvalidOperationException("Highlights currently require OBS Studio capture.");
+			var ordered = ranges?.OrderBy(r => r.StartFrame).ToList();
+			if (ordered == null || ordered.Count == 0 || ordered.Any(r => r.StartFrame < 0 ||
+				r.EndFrame <= r.StartFrame || r.EndFrame > FinalFrame))
+				throw new ArgumentException("Invalid highlight recording ranges.");
+			if (ordered.Zip(ordered.Skip(1), (a, b) => a.EndFrame > b.StartFrame).Any(x => x))
+				throw new ArgumentException("Highlight recording ranges overlap.");
+			if (_highlightRanges != null || IsCaptureActive() || IsBoundedRecordingPending)
+				throw new InvalidOperationException("Another recording is already in progress.");
+
+			_highlightRanges = ordered;
+			_highlightIndex = 0;
+			try { StartBoundedRecording(ordered[0].StartFrame, ordered[0].EndFrame); }
+			catch { _highlightRanges = null; throw; }
+		}
 
 		/// <summary>Seek to a range and record it at normal speed once telemetry confirms the seek.</summary>
 		public void StartBoundedRecording(int startFrame, int endFrame)
@@ -363,11 +385,48 @@ namespace iRacingReplayDirector
 					_lastAppliedNode = cameraNode;
 					OverlayDriver = cameraNode.Driver;
 				}
-				StartRecording();
+				if (_highlightRanges != null && _highlightIndex > 0)
+				{
+					try
+					{
+						Sim.Instance.Sdk.Replay.SetPlaybackSpeed(1);
+						((CaptureMode_OBS)SelectedCaptureMode).ResumeRecording();
+						StatusBarText = $"Recording highlight scene {_highlightIndex + 1}/{_highlightRanges.Count}.";
+					}
+					catch (Exception ex)
+					{
+						StopRecording();
+						StatusBarText = "Highlight capture failed: " + ex.Message;
+					}
+				}
+				else StartRecording();
 				return;
 			}
+			// While seeking a new scene, paused playback is expected. Do not treat it
+			// as an unexpected end and stop the OBS recording.
+			if (_boundedCaptureStartFrame.HasValue) return;
 			if (_boundedCaptureEndFrame.HasValue && IsCaptureActive() && CurrentFrame >= _boundedCaptureEndFrame.Value)
 			{
+				if (_highlightRanges != null && _highlightIndex + 1 < _highlightRanges.Count)
+				{
+					try
+					{
+						Sim.Instance.Sdk.Replay.SetPlaybackSpeed(0);
+						((CaptureMode_OBS)SelectedCaptureMode).PauseRecording();
+						_highlightIndex++;
+						var next = _highlightRanges[_highlightIndex];
+						_boundedCaptureStartFrame = next.StartFrame;
+						_boundedCaptureEndFrame = next.EndFrame;
+						Sim.Instance.Sdk.Replay.SetPosition(next.StartFrame);
+						StatusBarText = $"Seeking highlight scene {_highlightIndex + 1}/{_highlightRanges.Count}.";
+					}
+					catch (Exception ex)
+					{
+						StopRecording();
+						StatusBarText = "Highlight capture failed: " + ex.Message;
+					}
+					return;
+				}
 				StopRecording(true);
 				return;
 			}
@@ -637,6 +696,9 @@ namespace iRacingReplayDirector
 		public async void StopRecording(bool reachedPlannedEnd = false)
 		{
 			bool completedBoundedCapture = reachedPlannedEnd && _boundedCaptureEndFrame.HasValue;
+			bool wasHighlights = _highlightRanges != null;
+			_highlightRanges = null;
+			_highlightIndex = 0;
 			_boundedCaptureStartFrame = null;
 			_boundedCaptureEndFrame = null;
 			Sim.Instance.Sdk.Replay.SetPlaybackSpeed(0);
@@ -649,7 +711,8 @@ namespace iRacingReplayDirector
 			}
 			if (completedBoundedCapture)
 			{
-				StatusBarText = "Replay capture stopped at its planned end. Check the recorder's output file.";
+				StatusBarText = wasHighlights ? "Highlight recording stopped. Check the OBS output file." :
+					"Replay capture stopped at its planned end. Check the recorder's output file.";
 				BoundedCaptureFinished?.Invoke(this, EventArgs.Empty);
 			}
 
