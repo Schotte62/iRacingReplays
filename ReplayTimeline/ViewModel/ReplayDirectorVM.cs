@@ -356,7 +356,21 @@ namespace iRacingReplayDirector
 			CurrentCamera = Cameras.FirstOrDefault(c => c.GroupNum == Sim.Instance.Telemetry.CamGroupNumber.Value);
 		}
 
+		private bool _telemetryErrorLogged;
 		private void TelemetryUpdatedCallback(object sender, SdkWrapper.TelemetryUpdatedEventArgs e)
+		{
+			try { ProcessTelemetryUpdate(e); }
+			catch (Exception ex)
+			{
+				if (_telemetryErrorLogged) return;
+				_telemetryErrorLogged = true;
+				App.LogDiagnostic("Telemetry callback failed at frame " + CurrentFrame, ex);
+				Application.Current?.Dispatcher?.BeginInvoke(new Action(() =>
+					StatusBarText = "Telemetry update failed; see diagnostics.log."));
+			}
+		}
+
+		private void ProcessTelemetryUpdate(SdkWrapper.TelemetryUpdatedEventArgs e)
 		{
 			// Leave now if the session info hasn't already been loaded
 			if (!SessionInfoLoaded)
