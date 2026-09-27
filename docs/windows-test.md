@@ -19,3 +19,7 @@ replay. Inspect the first scene, the transitions and the end of the output
 file. iRacing's in-sim recordings appear under Documents/iRacing/videos; OBS
 uses the recording path set in its own settings. Report the output filename,
 the first and last visible replay moments, and any error shown by the program.
+If the app closes unexpectedly, the new diagnostic build writes errors to
+`%LOCALAPPDATA%\iRacingSequenceDirector\diagnostics.log`. Attach that file when
+reporting a crash. A log line may include replay frame numbers and .NET stack
+traces, but should never contain an OpenAI API key.
