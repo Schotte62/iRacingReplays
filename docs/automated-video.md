@@ -40,7 +40,9 @@ events by importance with configurable lead and tail. Its output is capped by
 the requested duration. `ReplayDirectorVM.StartBoundedRecording(startFrame,
 endFrame)` can seek to a range, start the selected recorder once the replay
 reaches its start, and stop at its end. The normal "final node" stop is bypassed
-for that range. The **Auto Director → Create Full Race Video** menu command now
+for that range. At each range start it selects the camera that was active at
+that replay frame. `BoundedCaptureFinished` fires only when the planned end is
+reached; manual stop does not report a successful clip. The **Auto Director → Create Full Race Video** menu command now
 scans the loaded replay from frame 0, generates and applies camera changes, and
 starts bounded capture using the selected capture mode. It requires a paused
 race replay and an available recorder. In-Sim Capture and OBS still store files
