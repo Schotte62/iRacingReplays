@@ -131,7 +131,11 @@ namespace iRacingReplayDirector
 					await Task.Delay(50);
 					if (Math.Abs((long)_vm.CurrentFrame - middle) <= 2) { settled = true; break; }
 				}
-				if (!settled) throw new InvalidOperationException("Replay did not seek to the race boundary. No recording was started.");
+				if (!settled)
+				{
+					App.LogDiagnostic($"Race boundary refinement unavailable: requested {middle}, reached {_vm.CurrentFrame}; using race sample {firstRaceFrame}.");
+					return firstRaceFrame;
+				}
 				int sessionNum = Sim.Instance.Telemetry.SessionNum.Value;
 				string type = Sim.Instance.SessionInfo["SessionInfo"]["Sessions"]
 					["SessionNum", sessionNum]["SessionType"].GetValue("");
@@ -155,7 +159,11 @@ namespace iRacingReplayDirector
 					await Task.Delay(50);
 					if (Math.Abs((long)_vm.CurrentFrame - middle) <= 2) { settled = true; break; }
 				}
-				if (!settled) throw new InvalidOperationException("Replay did not seek to the race end. No recording was started.");
+				if (!settled)
+				{
+					App.LogDiagnostic($"Race end refinement unavailable: requested {middle}, reached {_vm.CurrentFrame}; using last race sample {lastRaceFrame}.");
+					return lastRaceFrame;
+				}
 				int sessionNum = Sim.Instance.Telemetry.SessionNum.Value;
 				string type = Sim.Instance.SessionInfo["SessionInfo"]["Sessions"]
 					["SessionNum", sessionNum]["SessionType"].GetValue("");
