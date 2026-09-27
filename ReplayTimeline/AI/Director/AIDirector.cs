@@ -347,6 +347,7 @@ namespace iRacingReplayDirector.AI.Director
 			}
 			catch (Exception ex)
 			{
+				App.LogDiagnostic("Replay scan failed", ex);
 				StatusMessage = $"Scan error: {ex.Message}";
 				State = AIDirectorState.Error;
 				return null;
@@ -372,11 +373,8 @@ namespace iRacingReplayDirector.AI.Director
 		{
 			try
 			{
-				if (_viewModel?.Drivers == null || _viewModel.Drivers.Count == 0)
-					return null;
-
 				// Create a safe copy of the drivers list to avoid collection modified exceptions
-				var driversCopy = _viewModel.Drivers.ToList();
+				var driversCopy = _viewModel?.Drivers?.ToList() ?? new List<Driver>();
 
 				var snapshot = new TelemetrySnapshot
 				{
