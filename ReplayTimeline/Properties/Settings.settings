@@ -35,6 +35,9 @@
     <Setting Name="CaptureModeSelected" Type="System.String" Scope="User">
       <Value Profile="(Default)">None</Value>
     </Setting>
+    <Setting Name="HighlightTargetMinutes" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">8</Value>
+    </Setting>
     <Setting Name="ShowInactiveDrivers" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
