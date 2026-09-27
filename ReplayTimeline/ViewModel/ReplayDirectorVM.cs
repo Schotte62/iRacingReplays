@@ -133,6 +133,7 @@ namespace iRacingReplayDirector
 
 			// Initialize AI Director
 			AIDirector = new AIDirector(this);
+			AIDirector.Settings.HighlightTargetMinutes = Properties.Settings.Default.HighlightTargetMinutes;
 			ScanReplayCommand = new ScanReplayCommand(this);
 			CreateFullRaceVideoCommand = new CreateFullRaceVideoCommand(this);
 			CreateHighlightsVideoCommand = new CreateHighlightsVideoCommand(this);
