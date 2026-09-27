@@ -5,12 +5,11 @@ using System.Windows.Input;
 
 namespace iRacingReplayDirector
 {
-	/// <summary>Creates an eight-minute highlights recording using OBS pause/resume.</summary>
+	/// <summary>Creates a highlights recording with a configurable duration using OBS pause/resume.</summary>
 	public class CreateHighlightsVideoCommand : ICommand
 	{
 		private readonly ReplayDirectorVM _vm;
 		private bool _working;
-		private const int TargetSeconds = 8 * 60;
 
 		public CreateHighlightsVideoCommand(ReplayDirectorVM vm) { _vm = vm; }
 
@@ -37,7 +36,10 @@ namespace iRacingReplayDirector
 			try
 			{
 				var scan = await _vm.CreateFullRaceVideoCommand.PrepareRaceCameraPlanAsync();
-				var intervals = HighlightPlanner.Build(scan, TargetSeconds);
+				int minutes = _vm.AIDirector.Settings.HighlightTargetMinutes;
+				if (minutes < 1 || minutes > 720)
+					throw new InvalidOperationException("Highlight target must be between 1 and 720 minutes.");
+				var intervals = HighlightPlanner.Build(scan, checked(minutes * 60));
 				if (intervals.Count == 0)
 					throw new InvalidOperationException("No highlight scenes were selected.");
 				_vm.StartHighlightsRecording(intervals);
