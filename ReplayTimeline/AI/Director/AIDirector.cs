@@ -246,7 +246,7 @@ namespace iRacingReplayDirector.AI.Director
 					for (int attempt = 0; attempt < 15; attempt++)
 					{
 						await Task.Delay(100, cancellationToken).ConfigureAwait(false);
-						if (Math.Abs((long)_viewModel.CurrentFrame - frame) <= frameStep / 2)
+						if (Math.Abs((long)_viewModel.CurrentFrame - frame) <= frameStep)
 						{
 							seekSettled = true;
 							break;
