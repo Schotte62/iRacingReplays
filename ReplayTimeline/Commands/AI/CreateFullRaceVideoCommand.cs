@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using iRacingSimulator;
+using iRacingReplayDirector.AI.Models;
 
 namespace iRacingReplayDirector
 {
@@ -23,7 +24,7 @@ namespace iRacingReplayDirector
 
 		public bool CanExecute(object parameter)
 		{
-			return !_working && _vm.IsSessionReady() && _vm.FinalFrame > 0 && !_vm.IsBoundedRecordingPending &&
+			return !_working && !_vm.VideoPreparationBusy && _vm.IsSessionReady() && _vm.FinalFrame > 0 && !_vm.IsBoundedRecordingPending &&
 				!_vm.PlaybackEnabled && !_vm.IsCaptureActive() &&
 				_vm.AIDirector != null && !_vm.AIDirector.IsBusy &&
 				_vm.SelectedCaptureMode != null && _vm.SelectedCaptureMode.IsReadyToRecord();
@@ -33,6 +34,30 @@ namespace iRacingReplayDirector
 		{
 			if (!CanExecute(parameter)) return;
 			_working = true;
+			CommandManager.InvalidateRequerySuggested();
+			try
+			{
+				var scan = await PrepareRaceCameraPlanAsync();
+				_vm.StartBoundedRecording(scan.StartFrame, scan.EndFrame);
+				_vm.StatusBarText = "Race recording started at the race session; capture stops at its end.";
+			}
+			catch (Exception ex)
+			{
+				_vm.StatusBarText = "Full replay recording failed: " + ex.Message;
+				MessageBox.Show(ex.Message, "Create Full Race Video", MessageBoxButton.OK, MessageBoxImage.Error);
+			}
+			finally
+			{
+				_working = false;
+				CommandManager.InvalidateRequerySuggested();
+			}
+		}
+
+		public async Task<ReplayScanResult> PrepareRaceCameraPlanAsync()
+		{
+			if (_vm.VideoPreparationBusy)
+				throw new InvalidOperationException("Another video preparation is in progress.");
+			_vm.VideoPreparationBusy = true;
 			CommandManager.InvalidateRequerySuggested();
 			try
 			{
@@ -73,17 +98,11 @@ namespace iRacingReplayDirector
 				if (applied == 0)
 					throw new InvalidOperationException("No camera nodes could be applied. No recording was started.");
 
-				_vm.StartBoundedRecording(raceStart, raceEnd);
-				_vm.StatusBarText = "Race recording started at the race session; capture stops at its end.";
-			}
-			catch (Exception ex)
-			{
-				_vm.StatusBarText = "Full replay recording failed: " + ex.Message;
-				MessageBox.Show(ex.Message, "Create Full Race Video", MessageBoxButton.OK, MessageBoxImage.Error);
+				return scan;
 			}
 			finally
 			{
-				_working = false;
+				_vm.VideoPreparationBusy = false;
 				CommandManager.InvalidateRequerySuggested();
 			}
 		}
