@@ -17,6 +17,7 @@ namespace iRacingReplayDirector
 	{
 		private int? _boundedCaptureEndFrame;
 		private int? _boundedCaptureStartFrame;
+		public bool IsBoundedRecordingPending => _boundedCaptureStartFrame.HasValue;
 
 		/// <summary>Seek to a range and record it at normal speed once telemetry confirms the seek.</summary>
 		public void StartBoundedRecording(int startFrame, int endFrame)
@@ -109,6 +110,7 @@ namespace iRacingReplayDirector
 			// Initialize AI Director
 			AIDirector = new AIDirector(this);
 			ScanReplayCommand = new ScanReplayCommand(this);
+			CreateFullRaceVideoCommand = new CreateFullRaceVideoCommand(this);
 			GenerateCameraPlanCommand = new GenerateCameraPlanCommand(this);
 			ApplyAIPlanCommand = new ApplyAIPlanCommand(this);
 			ClearAIResultsCommand = new ClearAIResultsCommand(this);
@@ -354,7 +356,6 @@ namespace iRacingReplayDirector
 			}
 			if (_boundedCaptureEndFrame.HasValue && IsCaptureActive() && CurrentFrame >= _boundedCaptureEndFrame.Value)
 			{
-				_boundedCaptureEndFrame = null;
 				StopRecording();
 				return;
 			}
@@ -623,6 +624,7 @@ namespace iRacingReplayDirector
 
 		public async void StopRecording()
 		{
+			bool completedBoundedCapture = _boundedCaptureEndFrame.HasValue;
 			_boundedCaptureStartFrame = null;
 			_boundedCaptureEndFrame = null;
 			Sim.Instance.Sdk.Replay.SetPlaybackSpeed(0);
@@ -633,6 +635,8 @@ namespace iRacingReplayDirector
 				RecordBtnText = "Record";
 				ExternalCaptureActive = false;
 			}
+			if (completedBoundedCapture)
+				StatusBarText = "Replay capture stopped at its planned end. Check the recorder's output file.";
 
 			await Task.Delay(500);
 			
