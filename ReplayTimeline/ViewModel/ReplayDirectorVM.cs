@@ -18,6 +18,7 @@ namespace iRacingReplayDirector
 		private int? _boundedCaptureEndFrame;
 		private int? _boundedCaptureStartFrame;
 		public bool IsBoundedRecordingPending => _boundedCaptureStartFrame.HasValue;
+		public event EventHandler BoundedCaptureFinished;
 
 		/// <summary>Seek to a range and record it at normal speed once telemetry confirms the seek.</summary>
 		public void StartBoundedRecording(int startFrame, int endFrame)
@@ -351,12 +352,23 @@ namespace iRacingReplayDirector
 				(long)CurrentFrame < (long)_boundedCaptureStartFrame.Value + 60)
 			{
 				_boundedCaptureStartFrame = null;
+				// Apply the last camera choice before recording a segment. Applying
+				// CamChangeNode while paused would seek back to the node's frame.
+				var cameraNode = NodeCollection.Nodes.OfType<CamChangeNode>()
+					.Where(n => n.Enabled && n.Frame <= CurrentFrame)
+					.OrderBy(n => n.Frame).LastOrDefault();
+				if (cameraNode != null)
+				{
+					Sim.Instance.Sdk.Camera.SwitchToCar(cameraNode.Driver.NumberRaw, cameraNode.Camera.GroupNum);
+					_lastAppliedNode = cameraNode;
+					OverlayDriver = cameraNode.Driver;
+				}
 				StartRecording();
 				return;
 			}
 			if (_boundedCaptureEndFrame.HasValue && IsCaptureActive() && CurrentFrame >= _boundedCaptureEndFrame.Value)
 			{
-				StopRecording();
+				StopRecording(true);
 				return;
 			}
 
@@ -622,9 +634,9 @@ namespace iRacingReplayDirector
 			}
 		}
 
-		public async void StopRecording()
+		public async void StopRecording(bool reachedPlannedEnd = false)
 		{
-			bool completedBoundedCapture = _boundedCaptureEndFrame.HasValue;
+			bool completedBoundedCapture = reachedPlannedEnd && _boundedCaptureEndFrame.HasValue;
 			_boundedCaptureStartFrame = null;
 			_boundedCaptureEndFrame = null;
 			Sim.Instance.Sdk.Replay.SetPlaybackSpeed(0);
@@ -636,7 +648,10 @@ namespace iRacingReplayDirector
 				ExternalCaptureActive = false;
 			}
 			if (completedBoundedCapture)
+			{
 				StatusBarText = "Replay capture stopped at its planned end. Check the recorder's output file.";
+				BoundedCaptureFinished?.Invoke(this, EventArgs.Empty);
+			}
 
 			await Task.Delay(500);
 			
