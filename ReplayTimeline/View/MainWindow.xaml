@@ -39,6 +39,7 @@
 
 				<MenuItem Header="Auto Director">
 					<MenuItem Header="Create Full Race Video" Command="{Binding CreateFullRaceVideoCommand}"/>
+					<MenuItem Header="Create Highlights Video (8 min, OBS)" Command="{Binding CreateHighlightsVideoCommand}"/>
 					<Separator />
 					<MenuItem Header="Scan Replay for Events" Command="{Binding ScanReplayCommand}"/>
 					<MenuItem Header="Generate Camera Plan" Command="{Binding GenerateCameraPlanCommand}"/>
