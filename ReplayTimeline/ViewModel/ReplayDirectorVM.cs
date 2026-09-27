@@ -19,6 +19,7 @@ namespace iRacingReplayDirector
 		private int? _boundedCaptureStartFrame;
 		private List<HighlightInterval> _highlightRanges;
 		private int _highlightIndex;
+		public bool VideoPreparationBusy { get; set; }
 		public bool IsBoundedRecordingPending => _boundedCaptureStartFrame.HasValue;
 		public event EventHandler BoundedCaptureFinished;
 
@@ -134,6 +135,7 @@ namespace iRacingReplayDirector
 			AIDirector = new AIDirector(this);
 			ScanReplayCommand = new ScanReplayCommand(this);
 			CreateFullRaceVideoCommand = new CreateFullRaceVideoCommand(this);
+			CreateHighlightsVideoCommand = new CreateHighlightsVideoCommand(this);
 			GenerateCameraPlanCommand = new GenerateCameraPlanCommand(this);
 			ApplyAIPlanCommand = new ApplyAIPlanCommand(this);
 			ClearAIResultsCommand = new ClearAIResultsCommand(this);
