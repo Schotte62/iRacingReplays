@@ -40,8 +40,8 @@ namespace iRacingReplayDirector
 				App.LogDiagnostic("Create Full Race Video requested at replay frame " + _vm.CurrentFrame);
 				var scan = await PrepareRaceCameraPlanAsync();
 				App.LogDiagnostic($"Race scan complete: frames {scan.StartFrame} to {scan.EndFrame}; {scan.Events.Count} events");
-				_vm.StartBoundedRecording(scan.StartFrame, scan.EndFrame);
-				_vm.StatusBarText = "Race recording started at the race session; capture stops at its end.";
+				_vm.PrepareRaceRecording(scan.StartFrame, scan.EndFrame);
+				_vm.StatusBarText = "Race camera plan ready. Click Record to start at the race session.";
 			}
 			catch (Exception ex)
 			{
