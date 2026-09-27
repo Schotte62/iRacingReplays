@@ -601,6 +601,7 @@ namespace iRacingReplayDirector
 
 		// AI Director Commands
 		public ScanReplayCommand ScanReplayCommand { get; set; }
+		public CreateFullRaceVideoCommand CreateFullRaceVideoCommand { get; set; }
 		public GenerateCameraPlanCommand GenerateCameraPlanCommand { get; set; }
 		public ApplyAIPlanCommand ApplyAIPlanCommand { get; set; }
 		public ClearAIResultsCommand ClearAIResultsCommand { get; set; }
