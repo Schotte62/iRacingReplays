@@ -32,6 +32,15 @@ recorder manually. Keep the existing camera director and make the LLM optional.
 4. Validate file creation and playback on Windows with iRacing and the chosen
    capture mode. Document installation, settings, and a one-button workflow.
 
+## Current implementation
+
+`AI/Director/HighlightPlanner.cs` produces ordered, non-overlapping replay
+intervals from a scan. It reserves an opening and finish, then adds detected
+events by importance with configurable lead and tail. Its output is capped by
+the requested duration. This is a planning component only: no video output is
+produced yet. The next step is to connect it to a capture job that records
+individual intervals and joins their files.
+
 ## Verification needed on the user's PC
 
 The project targets .NET Framework 4.7.2/WPF and references iRacing SDK DLLs
