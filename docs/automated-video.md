@@ -64,11 +64,14 @@ flag. The session transition and visible first frame need confirmation in an
 actual replay; the two programs do not currently use identical start rules.
 
 Highlights and Both are still under development. The **Auto Director → Create
-Highlights Video (8 min, OBS)** command now uses the same Race session scan and
-camera plan as Full Race, builds intervals capped at eight minutes, and starts
+Highlights Video (OBS)** command now uses the same Race session scan and
+camera plan as Full Race, builds intervals for the configured target length, and starts
 `ReplayDirectorVM.StartHighlightsRecording()`. This currently requires OBS Studio.
-The target duration is an upper bound: if the planner finds fewer interesting
-events, the video can be shorter. `ReplayDirectorVM.StartHighlightsRecording()`
+Set the target under **Auto Director → Settings... → Video → Gewünschte
+Highlight-Länge (Minuten)** (1–720). The chosen value is saved for the next run,
+so a 40-minute race and a three-hour race can use different lengths. The
+target duration is currently an upper bound: if the planner finds fewer
+interesting events, the video can be shorter. `ReplayDirectorVM.StartHighlightsRecording()`
 sequences ordered highlight ranges: it pauses OBS before each seek, restores
 the active camera, resumes the replay and OBS, and stops at the final range.
 This needs a Windows/OBS capture test. `CaptureMode_OBS` exposes guarded PauseRecording and
