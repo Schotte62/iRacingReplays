@@ -24,6 +24,20 @@ try {
     $il.InsertBefore($first, $il.Create([Mono.Cecil.Cil.OpCodes]::Brtrue_S, $first))
     $il.InsertBefore($first, $il.Create([Mono.Cecil.Cil.OpCodes]::Ldc_I4_M1))
     $il.InsertBefore($first, $il.Create([Mono.Cecil.Cil.OpCodes]::Ret))
+
+    # SessionTime may also be omitted while a replay changes sessions.
+    # The parser already returns zero for invalid values; use that for null.
+    $parser = $assembly.MainModule.Types | Where-Object FullName -eq 'iRacingSimulator.Parser'
+    $parseSec = $parser.Methods | Where-Object Name -eq 'ParseSec'
+    if ($null -eq $parseSec -or $parseSec.Parameters.Count -ne 1) {
+        throw 'Unexpected simulator dependency: ParseSec(string) is missing.'
+    }
+    $parseIl = $parseSec.Body.GetILProcessor()
+    $parseFirst = $parseSec.Body.Instructions[0]
+    $parseIl.InsertBefore($parseFirst, $parseIl.Create([Mono.Cecil.Cil.OpCodes]::Ldarg_0))
+    $parseIl.InsertBefore($parseFirst, $parseIl.Create([Mono.Cecil.Cil.OpCodes]::Brtrue_S, $parseFirst))
+    $parseIl.InsertBefore($parseFirst, $parseIl.Create([Mono.Cecil.Cil.OpCodes]::Ldc_R8, [double]0))
+    $parseIl.InsertBefore($parseFirst, $parseIl.Create([Mono.Cecil.Cil.OpCodes]::Ret))
     $assembly.Write($patchedPath)
 } finally {
     $assembly.Dispose()
