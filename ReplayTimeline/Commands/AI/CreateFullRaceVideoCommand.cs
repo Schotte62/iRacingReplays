@@ -69,6 +69,9 @@ namespace iRacingReplayDirector
 				var scan = await _vm.AIDirector.ScanReplayAsync(0, endFrame);
 				if (scan == null || scan.Snapshots.Count == 0)
 					throw new InvalidOperationException("Replay scan did not return telemetry. No recording was started.");
+				App.LogDiagnostic($"Race scan samples: total {scan.Snapshots.Count}, replay end {endFrame}, sessions " +
+					string.Join("; ", scan.Snapshots.GroupBy(s => new { s.SessionNum, s.SessionType })
+						.Select(g => $"{g.Key.SessionNum}/{g.Key.SessionType}: {g.Count()} frames {g.Min(s => s.Frame)}-{g.Max(s => s.Frame)}")));
 				var raceSnapshots = scan.Snapshots.Where(s => IsRace(s.SessionType)).OrderBy(s => s.Frame).ToList();
 				if (raceSnapshots.Count == 0)
 					throw new InvalidOperationException("No race session was found in this replay. No recording was started.");
