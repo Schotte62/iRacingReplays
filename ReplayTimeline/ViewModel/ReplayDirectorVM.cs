@@ -15,6 +15,22 @@ namespace iRacingReplayDirector
 {
 	public partial class ReplayDirectorVM : INotifyPropertyChanged
 	{
+		private int? _boundedCaptureEndFrame;
+		private int? _boundedCaptureStartFrame;
+
+		/// <summary>Seek to a range and record it at normal speed once telemetry confirms the seek.</summary>
+		public void StartBoundedRecording(int startFrame, int endFrame)
+		{
+			if (!IsSessionReady() || startFrame < 0 || endFrame <= startFrame || endFrame > FinalFrame)
+				throw new ArgumentException("Invalid replay recording range.");
+			if (IsCaptureActive() || _boundedCaptureStartFrame.HasValue || !SelectedCaptureMode.IsReadyToRecord())
+				throw new InvalidOperationException("A recorder must be ready and no recording may already be active.");
+
+			Sim.Instance.Sdk.Replay.SetPlaybackSpeed(0);
+			_boundedCaptureEndFrame = endFrame;
+			_boundedCaptureStartFrame = startFrame;
+			Sim.Instance.Sdk.Replay.SetPosition(startFrame);
+		}
 		public ReplayDirectorVM()
 		{
 			InitSDK();
@@ -328,6 +344,21 @@ namespace iRacingReplayDirector
 			InSimCaptureSettingEnabled = Sim.Instance.Sdk.GetTelemetryValue<bool>("VidCapEnabled").Value;
 			InSimCaptureActive = Sim.Instance.Sdk.GetTelemetryValue<bool>("VidCapActive").Value;
 
+			if (_boundedCaptureStartFrame.HasValue && !PlaybackEnabled &&
+				CurrentFrame >= _boundedCaptureStartFrame.Value &&
+				(long)CurrentFrame < (long)_boundedCaptureStartFrame.Value + 60)
+			{
+				_boundedCaptureStartFrame = null;
+				StartRecording();
+				return;
+			}
+			if (_boundedCaptureEndFrame.HasValue && IsCaptureActive() && CurrentFrame >= _boundedCaptureEndFrame.Value)
+			{
+				_boundedCaptureEndFrame = null;
+				StopRecording();
+				return;
+			}
+
 			// Set current car/camera based on sim selections (won't update unless different to app)
 			CurrentDriver = Drivers.FirstOrDefault(d => d.Id == e.TelemetryInfo.CamCarIdx.Value);
 			CurrentCamera = Cameras.FirstOrDefault(c => c.GroupNum == e.TelemetryInfo.CamGroupNumber.Value);
@@ -468,7 +499,7 @@ namespace iRacingReplayDirector
 			IEnumerable<Node> orderedNodes = TimelineNodesView.Cast<Node>();
 			Node nodeToApply = orderedNodes.LastOrDefault(node => node.Frame <= CurrentFrame);
 
-			if (StopRecordingOnFinalNode && IsCaptureActive())
+			if (!_boundedCaptureEndFrame.HasValue && StopRecordingOnFinalNode && IsCaptureActive() && orderedNodes.Any())
 			{
 				var orderedNodesList = orderedNodes.ToList();
 				var finalNode = orderedNodesList[orderedNodesList.Count - 1];
@@ -592,6 +623,8 @@ namespace iRacingReplayDirector
 
 		public async void StopRecording()
 		{
+			_boundedCaptureStartFrame = null;
+			_boundedCaptureEndFrame = null;
 			Sim.Instance.Sdk.Replay.SetPlaybackSpeed(0);
 
 			if (SelectedCaptureMode.IsReadyToRecord())
